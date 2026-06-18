@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --bg-primary: #F7F4EF;
+  --bg-panel: #FFFFFF;
+  --bg-card: #FAF8F4;
+  --text-primary: #1F1D1A;
+  --text-secondary: #6E655C;
+  --text-tertiary: #9A9087;
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --accent-brown: #8B6E52;
+  --cream: #C8B89A;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.06); opacity: 0.25; }
+  100% { transform: scale(1); opacity: 0.6; }
+}
+
+.center-pulse::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 1px solid rgba(31, 29, 26, 0.18);
+  animation: pulse-ring 3s ease-in-out infinite;
+}
+
+.node-circle {
+  transition: transform 0.2s ease, filter 0.2s ease;
+  cursor: pointer;
+}
+
+.node-circle:hover {
+  transform: scale(1.1);
+  filter: brightness(1.2);
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.panel-enter {
+  animation: slideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.30);
+}
