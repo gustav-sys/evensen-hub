@@ -1,8 +1,8 @@
 name: Build installers
 
 # Builds the Windows .exe and macOS .dmg in the cloud.
-# Run it manually from the Actions tab ("Run workflow"), or push a version
-# tag like v1.0.0 to also attach the installers to a GitHub Release.
+# Run it manually from the Actions tab ("Run workflow"), push to main, or push a
+# version tag like v1.0.0 to also attach the installers to a GitHub Release.
 on:
   workflow_dispatch:
   push:
@@ -34,15 +34,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
+      # Call the tools directly via node (avoids pnpm's pre-run dependency check).
       - name: Type-check
-        run: pnpm exec tsc -b
+        run: node node_modules/typescript/bin/tsc -b
 
       - name: Build web bundle
-        run: pnpm exec vite build
+        run: node node_modules/vite/bin/vite.js build
 
       - name: Package Windows installer
         if: matrix.os == 'windows-latest'
-        run: pnpm exec electron-builder --win --publish never
+        run: node node_modules/electron-builder/out/cli/cli.js --win --publish never
 
       - name: Package macOS installer
         if: matrix.os == 'macos-latest'
@@ -50,7 +51,7 @@ jobs:
         # Mac users right-click > Open the first time, like Windows SmartScreen).
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: pnpm exec electron-builder --mac --publish never
+        run: node node_modules/electron-builder/out/cli/cli.js --mac --publish never
 
       - name: Upload installers as artifacts
         uses: actions/upload-artifact@v4
