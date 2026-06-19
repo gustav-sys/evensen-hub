@@ -1,0 +1,11 @@
+# Approve build scripts for these dependencies so `pnpm install` does not
+# error out (pnpm 10+ otherwise refuses to silently skip them). Listed under
+# both keys so it works across pnpm variants.
+onlyBuiltDependencies:
+  - '@firebase/util'
+  - electron-winstaller
+  - protobufjs
+allowBuilds:
+  '@firebase/util': true
+  electron-winstaller: true
+  protobufjs: true
