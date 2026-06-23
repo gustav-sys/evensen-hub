@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ChevronRight, Plus, X } from 'lucide-react';
 import type { Phase } from '../types';
 
 interface Props {
@@ -7,9 +7,224 @@ interface Props {
   currentPhaseId: string;
   onSelectPhase: (phaseId: string) => void;
   panelOpen: boolean;
+  onPhaseTitleChange: (phaseId: string, title: string) => void;
+  onUpdatePhaseItem: (phaseId: string, index: number, text: string) => void;
+  onDeletePhaseItem: (phaseId: string, index: number) => void;
+  onAddPhaseItem: (phaseId: string) => void;
 }
 
-export const Timeline: React.FC<Props> = ({ phases, currentPhaseId, onSelectPhase }) => {
+const stop = (e: React.SyntheticEvent) => e.stopPropagation();
+
+// An editable item row inside the popover: click-to-edit text + delete button.
+const PopoverItem: React.FC<{
+  text: string;
+  onCommit: (value: string) => void;
+  onDelete: () => void;
+}> = ({ text, onCommit, onDelete }) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(text);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setDraft(text);
+  }, [text]);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const commit = () => {
+    setEditing(false);
+    onCommit(draft);
+  };
+
+  return (
+    <li
+      onClick={stop}
+      onMouseDown={stop}
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 7,
+        fontSize: 11,
+        color: '#6E655C',
+        lineHeight: 1.4,
+      }}
+    >
+      <span
+        style={{
+          width: 4,
+          height: 4,
+          borderRadius: '50%',
+          background: '#8B6E52',
+          flexShrink: 0,
+          marginTop: 6,
+        }}
+      />
+      {editing ? (
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onClick={stop}
+          onMouseDown={stop}
+          onBlur={commit}
+          onKeyDown={e => {
+            if (e.key === 'Enter') commit();
+            if (e.key === 'Escape') {
+              setDraft(text);
+              setEditing(false);
+            }
+          }}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            background: '#FFFFFF',
+            border: '1px solid rgba(0,0,0,0.12)',
+            borderRadius: 4,
+            outline: 'none',
+            color: '#1F1D1A',
+            fontSize: 11,
+            padding: '2px 5px',
+            fontFamily: 'inherit',
+            lineHeight: 1.4,
+          }}
+        />
+      ) : (
+        <span
+          onClick={e => {
+            e.stopPropagation();
+            setEditing(true);
+          }}
+          style={{ flex: 1, minWidth: 0, cursor: 'text' }}
+        >
+          {text}
+        </span>
+      )}
+      {!editing && (
+        <button
+          onClick={e => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          onMouseDown={stop}
+          title="Remove item"
+          style={{
+            flexShrink: 0,
+            background: 'none',
+            border: 'none',
+            color: '#9A9087',
+            cursor: 'pointer',
+            padding: 0,
+            display: 'flex',
+            alignItems: 'center',
+            marginTop: 1,
+            transition: 'color 0.15s',
+          }}
+          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#B4463C')}
+          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = '#9A9087')}
+        >
+          <X size={11} />
+        </button>
+      )}
+    </li>
+  );
+};
+
+// The phase chip title — single click selects the phase (handled by the parent
+// button), double-click switches to an inline editor.
+const PhaseTitle: React.FC<{
+  phaseId: string;
+  title: string;
+  isCurrent: boolean;
+  onCommit: (value: string) => void;
+}> = ({ phaseId, title, isCurrent, onCommit }) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(title);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setDraft(title);
+  }, [title]);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const commit = () => {
+    setEditing(false);
+    onCommit(draft);
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onClick={stop}
+        onMouseDown={stop}
+        onDoubleClick={stop}
+        onBlur={commit}
+        onKeyDown={e => {
+          if (e.key === 'Enter') commit();
+          if (e.key === 'Escape') {
+            setDraft(title);
+            setEditing(false);
+          }
+        }}
+        style={{
+          background: '#FFFFFF',
+          border: '1px solid rgba(0,0,0,0.18)',
+          borderRadius: 4,
+          outline: 'none',
+          color: '#1F1D1A',
+          fontSize: 11,
+          letterSpacing: '0.01em',
+          padding: '1px 5px',
+          fontFamily: 'inherit',
+          width: Math.max(70, draft.length * 7),
+          maxWidth: 180,
+        }}
+      />
+    );
+  }
+
+  return (
+    <span
+      onDoubleClick={e => {
+        e.stopPropagation();
+        setDraft(title);
+        setEditing(true);
+      }}
+      title="Double-click to rename"
+      data-phase-title={phaseId}
+      style={{
+        fontSize: 11,
+        color: isCurrent ? '#1F1D1A' : '#9A9087',
+        letterSpacing: '0.01em',
+      }}
+    >
+      {title}
+    </span>
+  );
+};
+
+export const Timeline: React.FC<Props> = ({
+  phases,
+  currentPhaseId,
+  onSelectPhase,
+  onPhaseTitleChange,
+  onUpdatePhaseItem,
+  onDeletePhaseItem,
+  onAddPhaseItem,
+}) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleClick = (phaseId: string) => {
@@ -71,13 +286,15 @@ export const Timeline: React.FC<Props> = ({ phases, currentPhaseId, onSelectPhas
                 {/* Popover above */}
                 {isExpanded && (
                   <div
+                    onClick={stop}
+                    onMouseDown={stop}
                     style={{
                       position: 'absolute',
                       bottom: 'calc(100% + 12px)',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      minWidth: 180,
-                      maxWidth: 240,
+                      minWidth: 200,
+                      maxWidth: 260,
                       background: '#FFFFFF',
                       border: '1px solid rgba(0,0,0,0.1)',
                       borderRadius: 8,
@@ -108,32 +325,44 @@ export const Timeline: React.FC<Props> = ({ phases, currentPhaseId, onSelectPhas
                         gap: 6,
                       }}
                     >
-                      {phase.items.map(item => (
-                        <li
-                          key={item}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: 7,
-                            fontSize: 11,
-                            color: '#6E655C',
-                            lineHeight: 1.4,
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: 4,
-                              height: 4,
-                              borderRadius: '50%',
-                              background: '#8B6E52',
-                              flexShrink: 0,
-                              marginTop: 5,
-                            }}
-                          />
-                          {item}
-                        </li>
+                      {phase.items.map((item, idx) => (
+                        <PopoverItem
+                          key={idx}
+                          text={item}
+                          onCommit={value => onUpdatePhaseItem(phase.id, idx, value)}
+                          onDelete={() => onDeletePhaseItem(phase.id, idx)}
+                        />
                       ))}
                     </ul>
+
+                    {/* Add item */}
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        onAddPhaseItem(phase.id);
+                      }}
+                      onMouseDown={stop}
+                      style={{
+                        marginTop: phase.items.length ? 10 : 2,
+                        background: 'none',
+                        border: 'none',
+                        color: '#9A9087',
+                        fontSize: 11,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        padding: 0,
+                        fontFamily: 'inherit',
+                        transition: 'color 0.15s',
+                      }}
+                      onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#8B6E52')}
+                      onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = '#9A9087')}
+                    >
+                      <Plus size={12} />
+                      Add item
+                    </button>
+
                     {/* Pointer */}
                     <div
                       style={{
@@ -200,15 +429,12 @@ export const Timeline: React.FC<Props> = ({ phases, currentPhaseId, onSelectPhas
                   >
                     Fase {phase.number}
                   </span>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      color: isCurrent ? '#1F1D1A' : '#9A9087',
-                      letterSpacing: '0.01em',
-                    }}
-                  >
-                    {phase.title}
-                  </span>
+                  <PhaseTitle
+                    phaseId={phase.id}
+                    title={phase.title}
+                    isCurrent={isCurrent}
+                    onCommit={value => onPhaseTitleChange(phase.id, value)}
+                  />
                 </button>
               </div>
 

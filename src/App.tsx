@@ -4,7 +4,9 @@ import { DetailPanel } from './components/DetailPanel';
 import { NamePrompt } from './components/NamePrompt';
 import { Timeline } from './components/Timeline';
 import { PriorityLegend } from './components/PriorityLegend';
+import { PresenceBar } from './components/PresenceBar';
 import { useStore } from './hooks/useStore';
+import { usePresence } from './hooks/usePresence';
 
 const USERNAME_KEY = 'evensen-hub-username';
 
@@ -16,6 +18,10 @@ function App() {
     setBrandName,
     setNodeLabel,
     setCurrentPhase,
+    setPhaseTitle,
+    addPhaseItem,
+    updatePhaseItem,
+    deletePhaseItem,
     updateDeliverable,
     cycleStatus,
     addDeliverable,
@@ -28,6 +34,8 @@ function App() {
   const [username, setUsername] = useState<string | null>(() => {
     return localStorage.getItem(USERNAME_KEY);
   });
+
+  const onlineUsers = usePresence(username);
 
   useEffect(() => {
     if (username) {
@@ -174,6 +182,10 @@ function App() {
             /{' '}
             {state.nodes.reduce((acc, n) => acc + n.deliverables.length, 0)} done
           </div>
+
+          {/* Online presence cluster */}
+          <PresenceBar users={onlineUsers} />
+
           {username && (
             <div
               style={{
@@ -245,6 +257,10 @@ function App() {
           currentPhaseId={state.currentPhaseId}
           onSelectPhase={setCurrentPhase}
           panelOpen={!!activeNodeId}
+          onPhaseTitleChange={setPhaseTitle}
+          onUpdatePhaseItem={updatePhaseItem}
+          onDeletePhaseItem={deletePhaseItem}
+          onAddPhaseItem={addPhaseItem}
         />
       </div>
 

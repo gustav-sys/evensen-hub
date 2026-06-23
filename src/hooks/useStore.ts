@@ -49,7 +49,12 @@ function migrateState(partial: Partial<AppState> | null | undefined): AppState {
     brandName: partial.brandName ?? base.brandName,
     campaignName: partial.campaignName ?? base.campaignName,
     nodes,
-    phases: base.phases, // phase definitions are structural — always from code
+    // user-editable: phase titles & items persist; fall back to the seed only
+    // when nothing has been persisted yet
+    phases:
+      Array.isArray(partial.phases) && partial.phases.length
+        ? partial.phases
+        : base.phases,
     currentPhaseId: partial.currentPhaseId ?? base.currentPhaseId,
   };
 }
@@ -172,6 +177,70 @@ export function useStore() {
   const setCurrentPhase = useCallback((phaseId: string) => {
     setState(s => {
       const next = { ...s, currentPhaseId: phaseId };
+      persistState(next);
+      return next;
+    });
+  }, [persistState]);
+
+  const setPhaseTitle = useCallback((phaseId: string, title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    setState(s => {
+      const next = {
+        ...s,
+        phases: s.phases.map(p =>
+          p.id !== phaseId ? p : { ...p, title: trimmed }
+        ),
+      };
+      persistState(next);
+      return next;
+    });
+  }, [persistState]);
+
+  const addPhaseItem = useCallback((phaseId: string) => {
+    setState(s => {
+      const next = {
+        ...s,
+        phases: s.phases.map(p =>
+          p.id !== phaseId ? p : { ...p, items: [...p.items, 'New item'] }
+        ),
+      };
+      persistState(next);
+      return next;
+    });
+  }, [persistState]);
+
+  const updatePhaseItem = useCallback(
+    (phaseId: string, index: number, text: string) => {
+      const trimmed = text.trim();
+      setState(s => {
+        const next = {
+          ...s,
+          phases: s.phases.map(p => {
+            if (p.id !== phaseId) return p;
+            const items = trimmed
+              ? p.items.map((it, i) => (i === index ? trimmed : it))
+              : p.items.filter((_, i) => i !== index);
+            return { ...p, items };
+          }),
+        };
+        persistState(next);
+        return next;
+      });
+    },
+    [persistState]
+  );
+
+  const deletePhaseItem = useCallback((phaseId: string, index: number) => {
+    setState(s => {
+      const next = {
+        ...s,
+        phases: s.phases.map(p =>
+          p.id !== phaseId
+            ? p
+            : { ...p, items: p.items.filter((_, i) => i !== index) }
+        ),
+      };
       persistState(next);
       return next;
     });
@@ -313,6 +382,10 @@ export function useStore() {
     setBrandName,
     setNodeLabel,
     setCurrentPhase,
+    setPhaseTitle,
+    addPhaseItem,
+    updatePhaseItem,
+    deletePhaseItem,
     updateDeliverable,
     cycleStatus,
     addDeliverable,
