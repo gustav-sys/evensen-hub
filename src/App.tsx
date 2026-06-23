@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MapView } from './components/MapView';
 import { DetailPanel } from './components/DetailPanel';
 import { NamePrompt } from './components/NamePrompt';
@@ -14,6 +14,7 @@ function App() {
   const {
     state,
     isSyncing,
+    setAppTitle,
     setCampaignName,
     setBrandName,
     setNodeLabel,
@@ -34,6 +35,29 @@ function App() {
   const [username, setUsername] = useState<string | null>(() => {
     return localStorage.getItem(USERNAME_KEY);
   });
+
+  // Inline click-to-edit state for the top-left app title
+  const [titleEditing, setTitleEditing] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(state.appTitle);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setTitleDraft(state.appTitle);
+  }, [state.appTitle]);
+
+  useEffect(() => {
+    if (titleEditing && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
+    }
+  }, [titleEditing]);
+
+  const commitTitle = () => {
+    setTitleEditing(false);
+    const trimmed = titleDraft.trim() || state.appTitle;
+    setTitleDraft(trimmed);
+    setAppTitle(trimmed);
+  };
 
   const onlineUsers = usePresence(username);
 
@@ -146,17 +170,49 @@ function App() {
               }}
             />
           </div>
-          <span
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              letterSpacing: '0.15em',
-              color: '#8B6E52',
-              textTransform: 'uppercase',
-            }}
-          >
-            Evensen 1916 — Campaign Hub
-          </span>
+          {titleEditing ? (
+            <input
+              ref={titleInputRef}
+              value={titleDraft}
+              onChange={e => setTitleDraft(e.target.value)}
+              onBlur={commitTitle}
+              onKeyDown={e => {
+                if (e.key === 'Enter') commitTitle();
+                if (e.key === 'Escape') {
+                  setTitleDraft(state.appTitle);
+                  setTitleEditing(false);
+                }
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                borderBottom: '1px solid rgba(139,110,82,0.4)',
+                outline: 'none',
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: '0.15em',
+                color: '#8B6E52',
+                textTransform: 'uppercase',
+                width: 240,
+                padding: '2px 0',
+              }}
+            />
+          ) : (
+            <span
+              onClick={() => setTitleEditing(true)}
+              title="Click to edit title"
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: '0.15em',
+                color: '#8B6E52',
+                textTransform: 'uppercase',
+                cursor: 'text',
+              }}
+            >
+              {state.appTitle}
+            </span>
+          )}
 
           {/* Sync status dot: green = live, amber = loading */}
           <div

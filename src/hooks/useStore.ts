@@ -11,6 +11,7 @@ const FIRESTORE_FALLBACK_MS = 1500;
 
 function defaultState(): AppState {
   return {
+    appTitle: 'Evensen 1916 — Campaign Hub',
     brandName: 'EVENSEN 1916',
     campaignName: 'Campaign SS27',
     nodes: initialNodes,
@@ -46,6 +47,7 @@ function migrateState(partial: Partial<AppState> | null | undefined): AppState {
   });
 
   return {
+    appTitle: partial.appTitle ?? base.appTitle,
     brandName: partial.brandName ?? base.brandName,
     campaignName: partial.campaignName ?? base.campaignName,
     nodes,
@@ -142,6 +144,16 @@ export function useStore() {
       setDoc(hubDoc, latestState.current).catch(console.error);
     }, FIRESTORE_DEBOUNCE_MS);
   }, []);
+
+  const setAppTitle = useCallback((title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    setState(s => {
+      const next = { ...s, appTitle: trimmed };
+      persistState(next);
+      return next;
+    });
+  }, [persistState]);
 
   const setCampaignName = useCallback((name: string) => {
     setState(s => {
@@ -378,6 +390,7 @@ export function useStore() {
   return {
     state,
     isSyncing,
+    setAppTitle,
     setCampaignName,
     setBrandName,
     setNodeLabel,
