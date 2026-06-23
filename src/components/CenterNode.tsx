@@ -1,18 +1,33 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 interface Props {
+  brandName: string;
   campaignName: string;
+  onBrandNameChange: (name: string) => void;
   onNameChange: (name: string) => void;
 }
 
-export const CenterNode: React.FC<Props> = ({ campaignName, onNameChange }) => {
+export const CenterNode: React.FC<Props> = ({
+  brandName,
+  campaignName,
+  onBrandNameChange,
+  onNameChange,
+}) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(campaignName);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const [brandEditing, setBrandEditing] = useState(false);
+  const [brandDraft, setBrandDraft] = useState(brandName);
+  const brandInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     setDraft(campaignName);
   }, [campaignName]);
+
+  useEffect(() => {
+    setBrandDraft(brandName);
+  }, [brandName]);
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -21,11 +36,25 @@ export const CenterNode: React.FC<Props> = ({ campaignName, onNameChange }) => {
     }
   }, [editing]);
 
+  useEffect(() => {
+    if (brandEditing && brandInputRef.current) {
+      brandInputRef.current.focus();
+      brandInputRef.current.select();
+    }
+  }, [brandEditing]);
+
   const commit = () => {
     setEditing(false);
     const trimmed = draft.trim() || campaignName;
     setDraft(trimmed);
     onNameChange(trimmed);
+  };
+
+  const commitBrand = () => {
+    setBrandEditing(false);
+    const trimmed = brandDraft.trim() || brandName;
+    setBrandDraft(trimmed);
+    onBrandNameChange(trimmed);
   };
 
   return (
@@ -47,18 +76,62 @@ export const CenterNode: React.FC<Props> = ({ campaignName, onNameChange }) => {
         boxShadow: '0 8px 30px rgba(0, 0, 0, 0.18)',
       }}
     >
-      {/* Brand name — fixed */}
-      <span
-        style={{
-          fontSize: 11,
-          fontWeight: 600,
-          letterSpacing: '0.18em',
-          color: '#C8B89A',
-          textTransform: 'uppercase',
-        }}
-      >
-        Evensen 1916
-      </span>
+      {/* Brand name — editable */}
+      {brandEditing ? (
+        <input
+          ref={brandInputRef}
+          value={brandDraft}
+          onChange={e => setBrandDraft(e.target.value)}
+          onBlur={commitBrand}
+          onKeyDown={e => {
+            if (e.key === 'Enter') commitBrand();
+            if (e.key === 'Escape') {
+              setBrandDraft(brandName);
+              setBrandEditing(false);
+            }
+          }}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            outline: 'none',
+            color: '#C8B89A',
+            fontSize: 11,
+            fontWeight: 600,
+            textAlign: 'center',
+            width: 130,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            borderBottom: '1px solid rgba(200, 184, 154, 0.35)',
+          }}
+        />
+      ) : (
+        <span
+          onClick={() => setBrandEditing(true)}
+          title="Click to edit brand name"
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: '0.18em',
+            color: '#C8B89A',
+            textTransform: 'uppercase',
+            cursor: 'text',
+            textAlign: 'center',
+            maxWidth: 130,
+            padding: '2px 4px',
+            borderRadius: 2,
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.background =
+              'rgba(200, 184, 154, 0.08)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.background = 'transparent';
+          }}
+        >
+          {brandName}
+        </span>
+      )}
 
       {/* Divider */}
       <div

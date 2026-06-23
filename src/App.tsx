@@ -13,6 +13,8 @@ function App() {
     state,
     isSyncing,
     setCampaignName,
+    setBrandName,
+    setNodeLabel,
     setCurrentPhase,
     updateDeliverable,
     cycleStatus,
@@ -223,10 +225,14 @@ function App() {
         >
           <MapView
             nodes={state.nodes}
+            brandName={state.brandName}
             campaignName={state.campaignName}
             activeNodeId={activeNodeId}
             onNodeClick={handleNodeClick}
             onNameChange={setCampaignName}
+            onBrandNameChange={setBrandName}
+            onNodeLabelChange={setNodeLabel}
+            onNodeEditStart={handlePanelClose}
           />
         </div>
 

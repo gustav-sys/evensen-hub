@@ -5,18 +5,26 @@ import { TouchpointNode } from './TouchpointNode';
 
 interface Props {
   nodes: NodeData[];
+  brandName: string;
   campaignName: string;
   activeNodeId: string | null;
   onNodeClick: (id: string) => void;
   onNameChange: (name: string) => void;
+  onBrandNameChange: (name: string) => void;
+  onNodeLabelChange: (nodeId: string, label: string) => void;
+  onNodeEditStart: () => void;
 }
 
 export const MapView: React.FC<Props> = ({
   nodes,
+  brandName,
   campaignName,
   activeNodeId,
   onNodeClick,
   onNameChange,
+  onBrandNameChange,
+  onNodeLabelChange,
+  onNodeEditStart,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 800, h: 700 });
@@ -94,6 +102,8 @@ export const MapView: React.FC<Props> = ({
           y={y}
           isActive={activeNodeId === node.id}
           onClick={() => onNodeClick(node.id)}
+          onLabelChange={label => onNodeLabelChange(node.id, label)}
+          onEditStart={onNodeEditStart}
         />
       ))}
 
@@ -107,7 +117,9 @@ export const MapView: React.FC<Props> = ({
         }}
       >
         <CenterNode
+          brandName={brandName}
           campaignName={campaignName}
+          onBrandNameChange={onBrandNameChange}
           onNameChange={onNameChange}
         />
       </div>

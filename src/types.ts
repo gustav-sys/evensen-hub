@@ -32,6 +32,7 @@ export interface NodeData {
 }
 
 export interface AppState {
+  brandName: string;
   campaignName: string;
   nodes: NodeData[];
   phases: Phase[];

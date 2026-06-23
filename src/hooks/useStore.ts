@@ -11,6 +11,7 @@ const FIRESTORE_FALLBACK_MS = 1500;
 
 function defaultState(): AppState {
   return {
+    brandName: 'EVENSEN 1916',
     campaignName: 'Campaign SS27',
     nodes: initialNodes,
     phases: initialPhases,
@@ -18,11 +19,12 @@ function defaultState(): AppState {
   };
 }
 
-// Merge persisted state onto the code-defined structure. Structural fields
-// (which nodes exist, their title/shortLabel/color/icon/priority, and the phase
-// definitions) ALWAYS come from the seed in code, so edits to them take effect
-// for everyone. Only genuine user data — deliverables, campaign name, and the
-// currently-selected phase — is carried over from localStorage / Firestore.
+// Merge persisted state onto the code-defined structure. Node identity and
+// presentation (which nodes exist, their color/icon/priority) and the phase
+// definitions ALWAYS come from the seed in code, so edits to them take effect
+// for everyone. Genuine user data — the brand name, campaign name, the
+// currently-selected phase, per-node deliverables, and the user-editable node
+// title/shortLabel — is carried over from localStorage / Firestore.
 function migrateState(partial: Partial<AppState> | null | undefined): AppState {
   const base = defaultState();
   if (!partial) return base;
@@ -32,7 +34,10 @@ function migrateState(partial: Partial<AppState> | null | undefined): AppState {
   const nodes: NodeData[] = initialNodes.map(seed => {
     const saved = persistedNodes.find(n => n.id === seed.id);
     return {
-      ...seed, // title, shortLabel, color, icon, priority always from code
+      ...seed, // color, icon, priority always from code
+      // user-editable: node label (title + shortLabel) persists across reloads
+      title: saved?.title ?? seed.title,
+      shortLabel: saved?.shortLabel ?? seed.shortLabel,
       deliverables:
         saved && Array.isArray(saved.deliverables)
           ? saved.deliverables // user-owned: statuses, assignees, comments, added items
@@ -41,6 +46,7 @@ function migrateState(partial: Partial<AppState> | null | undefined): AppState {
   });
 
   return {
+    brandName: partial.brandName ?? base.brandName,
     campaignName: partial.campaignName ?? base.campaignName,
     nodes,
     phases: base.phases, // phase definitions are structural — always from code
@@ -135,6 +141,29 @@ export function useStore() {
   const setCampaignName = useCallback((name: string) => {
     setState(s => {
       const next = { ...s, campaignName: name };
+      persistState(next);
+      return next;
+    });
+  }, [persistState]);
+
+  const setBrandName = useCallback((name: string) => {
+    setState(s => {
+      const next = { ...s, brandName: name };
+      persistState(next);
+      return next;
+    });
+  }, [persistState]);
+
+  const setNodeLabel = useCallback((nodeId: string, label: string) => {
+    const trimmed = label.trim();
+    if (!trimmed) return;
+    setState(s => {
+      const next = {
+        ...s,
+        nodes: s.nodes.map(n =>
+          n.id !== nodeId ? n : { ...n, title: trimmed, shortLabel: trimmed }
+        ),
+      };
       persistState(next);
       return next;
     });
@@ -281,6 +310,8 @@ export function useStore() {
     state,
     isSyncing,
     setCampaignName,
+    setBrandName,
+    setNodeLabel,
     setCurrentPhase,
     updateDeliverable,
     cycleStatus,
