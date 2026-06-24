@@ -332,6 +332,9 @@ function App() {
           onUpdateAssignee={(nodeId, deliverableId, assignee) =>
             updateDeliverable(nodeId, deliverableId, { assignee })
           }
+          onUpdateDueDate={(nodeId, did, dueDate) =>
+            updateDeliverable(nodeId, did, { dueDate })
+          }
           onAddDeliverable={addDeliverable}
           onDeleteDeliverable={deleteDeliverable}
           onAddComment={(nodeId, deliverableId, text) =>

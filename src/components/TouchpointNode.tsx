@@ -5,6 +5,7 @@ import {
 import type { NodeData } from '../types';
 import { PRIORITY_CONFIG } from '../data/priorities';
 import { ShoeIcon } from './ShoeIcon';
+import { nodeUrgency, URGENCY_COLORS } from '../utils/dueDate';
 
 const iconMap: Record<string, React.FC<{ size?: number; strokeWidth?: number }>> = {
   BookOpen,
@@ -42,6 +43,7 @@ export const TouchpointNode: React.FC<Props> = ({
   const doneCount = node.deliverables.filter(d => d.status === 'done').length;
   const total = node.deliverables.length;
   const priority = PRIORITY_CONFIG[node.priority];
+  const urgency = nodeUrgency(node.deliverables);
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(node.shortLabel);
@@ -128,6 +130,26 @@ export const TouchpointNode: React.FC<Props> = ({
         >
           {node.priority}
         </span>
+      )}
+
+      {/* Deadline urgency dot — bottom-center edge of the circle */}
+      {urgency && (
+        <span
+          title={urgency === 'overdue' ? 'Has overdue deliverables' : 'Has deliverables due soon'}
+          style={{
+            position: 'absolute',
+            bottom: -3,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            background: URGENCY_COLORS[urgency],
+            border: '1.5px solid #FFFFFF',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+            zIndex: 6,
+          }}
+        />
       )}
 
       <Icon size={node.icon === 'Shoe' ? 30 : 18} strokeWidth={1.5} />

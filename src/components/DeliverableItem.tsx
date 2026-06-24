@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, ChevronDown, ChevronUp, Send, Trash2 } from 'lucide-react';
+import { MessageCircle, ChevronDown, ChevronUp, Send, Trash2, Calendar, X } from 'lucide-react';
 import type { Deliverable, Status } from '../types';
 import { TEAM_MEMBERS } from '../data/team';
+import { urgencyFor, dueLabel, URGENCY_COLORS } from '../utils/dueDate';
 
 const STATUS_CONFIG: Record<Status, { label: string; bg: string; color: string }> = {
   'not-started': { label: 'Not Started', bg: 'rgba(140,130,121,0.18)', color: '#8C8279' },
@@ -16,6 +17,7 @@ interface Props {
   onCycleStatus: () => void;
   onUpdateTitle: (title: string) => void;
   onUpdateAssignee: (assignee: string) => void;
+  onUpdateDueDate: (dueDate: string) => void;
   onDelete: () => void;
   onAddComment: (text: string) => void;
 }
@@ -26,6 +28,7 @@ export const DeliverableItem: React.FC<Props> = ({
   onCycleStatus,
   onUpdateTitle,
   onUpdateAssignee,
+  onUpdateDueDate,
   onDelete,
   onAddComment,
 }) => {
@@ -36,10 +39,14 @@ export const DeliverableItem: React.FC<Props> = ({
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const assigneeRef = useRef<HTMLDivElement>(null);
+  const dueDateRef = useRef<HTMLInputElement>(null);
 
   const status = STATUS_CONFIG[deliverable.status];
 
   const assignedMember = TEAM_MEMBERS.find(m => m.name === deliverable.assignee);
+
+  const urgency = urgencyFor(deliverable.dueDate, deliverable.status);
+  const dueColor = URGENCY_COLORS[urgency];
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -307,6 +314,84 @@ export const DeliverableItem: React.FC<Props> = ({
                   </button>
                 )}
               </div>
+            )}
+          </div>
+
+          {/* Due date: a visible colored label opens the native picker (via showPicker);
+              the actual date input is hidden but holds the value. Explicit × clears it. */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              marginTop: 5,
+              position: 'relative',
+            }}
+          >
+            <input
+              ref={dueDateRef}
+              type="date"
+              value={deliverable.dueDate ?? ''}
+              onChange={e => onUpdateDueDate(e.target.value)}
+              tabIndex={-1}
+              aria-hidden
+              style={{
+                position: 'absolute',
+                left: 0,
+                bottom: 0,
+                width: 1,
+                height: 1,
+                opacity: 0,
+                padding: 0,
+                border: 'none',
+                pointerEvents: 'none',
+                colorScheme: 'light',
+              }}
+            />
+            <button
+              onClick={() => {
+                const el = dueDateRef.current;
+                if (el && typeof el.showPicker === 'function') el.showPicker();
+                else el?.focus();
+              }}
+              title={deliverable.dueDate ? 'Change due date' : 'Set due date'}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                fontFamily: 'inherit',
+                fontSize: 11,
+                fontWeight: deliverable.dueDate && urgency !== 'normal' ? 600 : 400,
+                color: deliverable.dueDate ? dueColor : '#9A9087',
+              }}
+            >
+              <Calendar size={12} />
+              {deliverable.dueDate
+                ? dueLabel(deliverable.dueDate, deliverable.status)
+                : 'Set due date'}
+            </button>
+            {deliverable.dueDate && (
+              <button
+                onClick={() => onUpdateDueDate('')}
+                title="Clear due date"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  color: '#9A9087',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#B4463C')}
+                onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = '#9A9087')}
+              >
+                <X size={11} />
+              </button>
             )}
           </div>
         </div>

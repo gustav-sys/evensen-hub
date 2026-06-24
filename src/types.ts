@@ -16,6 +16,8 @@ export interface Deliverable {
   title: string;
   status: Status;
   assignee: string;
+  /** ISO 'YYYY-MM-DD'. Empty/undefined = no deadline. */
+  dueDate?: string;
   comments: Comment[];
 }
 
