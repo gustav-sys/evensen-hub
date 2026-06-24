@@ -1,8 +1,9 @@
 name: Build installers
 
 # Builds the Windows .exe and macOS .dmg in the cloud.
-# Run it manually from the Actions tab ("Run workflow"), push to main, or push a
-# version tag like v1.0.0 to also attach the installers to a GitHub Release.
+# - push to main / manual run: builds and uploads installers as run artifacts.
+# - push a version tag (e.g. v1.1.0): also publishes installers + auto-update
+#   metadata (latest.yml) to a GitHub Release, which is what powers auto-update.
 on:
   workflow_dispatch:
   push:
@@ -21,6 +22,9 @@ jobs:
       matrix:
         os: [windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    env:
+      # On a version tag, publish to a GitHub Release; otherwise just build.
+      PUBLISH: ${{ startsWith(github.ref, 'refs/tags/') && 'always' || 'never' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,7 +47,9 @@ jobs:
 
       - name: Package Windows installer
         if: matrix.os == 'windows-latest'
-        run: node node_modules/electron-builder/out/cli/cli.js --win --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node node_modules/electron-builder/out/cli/cli.js --win --publish ${{ env.PUBLISH }}
 
       - name: Package macOS installer
         if: matrix.os == 'macos-latest'
@@ -51,7 +57,8 @@ jobs:
         # Mac users right-click > Open the first time, like Windows SmartScreen).
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: node node_modules/electron-builder/out/cli/cli.js --mac --publish never
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node node_modules/electron-builder/out/cli/cli.js --mac --publish ${{ env.PUBLISH }}
 
       - name: Upload installers as artifacts
         uses: actions/upload-artifact@v4
@@ -61,11 +68,3 @@ jobs:
             release/*.exe
             release/*.dmg
           if-no-files-found: ignore
-
-      - name: Attach installers to GitHub Release (on version tag)
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            release/*.exe
-            release/*.dmg
