@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronRight, Plus, X } from 'lucide-react';
+import { ChevronRight, Plus, X, Trash2 } from 'lucide-react';
 import type { Phase } from '../types';
 
 interface Props {
@@ -11,6 +11,8 @@ interface Props {
   onUpdatePhaseItem: (phaseId: string, index: number, text: string) => void;
   onDeletePhaseItem: (phaseId: string, index: number) => void;
   onAddPhaseItem: (phaseId: string) => void;
+  onAddPhase: () => void;
+  onDeletePhase: (phaseId: string) => void;
 }
 
 const stop = (e: React.SyntheticEvent) => e.stopPropagation();
@@ -224,12 +226,16 @@ export const Timeline: React.FC<Props> = ({
   onUpdatePhaseItem,
   onDeletePhaseItem,
   onAddPhaseItem,
+  onAddPhase,
+  onDeletePhase,
 }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const handleClick = (phaseId: string) => {
     onSelectPhase(phaseId);
     setExpandedId(prev => (prev === phaseId ? null : phaseId));
+    setConfirmingDelete(false);
   };
 
   return (
@@ -363,6 +369,95 @@ export const Timeline: React.FC<Props> = ({
                       Add item
                     </button>
 
+                    {/* Delete phase (kept when more than one phase exists) */}
+                    {phases.length > 1 && (
+                      <div
+                        style={{
+                          marginTop: 10,
+                          paddingTop: 10,
+                          borderTop: '1px solid rgba(0,0,0,0.08)',
+                        }}
+                      >
+                        {confirmingDelete ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 11, color: '#6E655C' }}>
+                              Delete this phase?
+                            </span>
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                setExpandedId(null);
+                                setConfirmingDelete(false);
+                                onDeletePhase(phase.id);
+                              }}
+                              onMouseDown={stop}
+                              style={{
+                                background: '#B4463C',
+                                color: '#FFFFFF',
+                                border: 'none',
+                                borderRadius: 4,
+                                padding: '3px 9px',
+                                fontSize: 10,
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                letterSpacing: '0.04em',
+                                fontFamily: 'inherit',
+                              }}
+                            >
+                              Delete
+                            </button>
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                setConfirmingDelete(false);
+                              }}
+                              onMouseDown={stop}
+                              style={{
+                                background: 'transparent',
+                                color: '#9A9087',
+                                border: '1px solid rgba(0,0,0,0.12)',
+                                borderRadius: 4,
+                                padding: '3px 9px',
+                                fontSize: 10,
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                letterSpacing: '0.04em',
+                                fontFamily: 'inherit',
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              setConfirmingDelete(true);
+                            }}
+                            onMouseDown={stop}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#9A9087',
+                              fontSize: 11,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 5,
+                              padding: 0,
+                              fontFamily: 'inherit',
+                              transition: 'color 0.15s',
+                            }}
+                            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#B4463C')}
+                            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = '#9A9087')}
+                          >
+                            <Trash2 size={12} />
+                            Delete phase
+                          </button>
+                        )}
+                      </div>
+                    )}
+
                     {/* Pointer */}
                     <div
                       style={{
@@ -449,6 +544,48 @@ export const Timeline: React.FC<Props> = ({
             </React.Fragment>
           );
         })}
+
+        {/* Add phase */}
+        <button
+          onClick={onAddPhase}
+          title="Add a phase"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            padding: '7px 11px',
+            marginLeft: 4,
+            borderRadius: 7,
+            background: 'transparent',
+            border: '1px dashed rgba(0,0,0,0.22)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            whiteSpace: 'nowrap',
+            color: '#9A9087',
+            flexShrink: 0,
+            transition: 'color 0.15s, border-color 0.15s',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.color = '#8B6E52';
+            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(139,110,82,0.5)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.color = '#9A9087';
+            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,0,0,0.22)';
+          }}
+        >
+          <Plus size={13} />
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Phase
+          </span>
+        </button>
       </div>
     </div>
   );

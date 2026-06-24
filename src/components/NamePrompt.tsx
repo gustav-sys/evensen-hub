@@ -196,7 +196,7 @@ export const NamePrompt: React.FC<Props> = ({
             if (canSubmit) (e.currentTarget as HTMLElement).style.background = '#1F1D1A';
           }}
         >
-          Join Campaign
+          Join Evensen Hub
         </button>
       </div>
     </div>

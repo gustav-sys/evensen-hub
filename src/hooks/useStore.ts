@@ -21,11 +21,12 @@ function defaultState(): AppState {
 }
 
 // Merge persisted state onto the code-defined structure. Node identity and
-// presentation (which nodes exist, their color/icon/priority) and the phase
-// definitions ALWAYS come from the seed in code, so edits to them take effect
-// for everyone. Genuine user data — the brand name, campaign name, the
-// currently-selected phase, per-node deliverables, and the user-editable node
-// title/shortLabel — is carried over from localStorage / Firestore.
+// presentation (which nodes exist, their color/icon/priority) come from the
+// seed in code, so edits to them take effect for everyone. Genuine user data —
+// the brand name, campaign name, the user-editable node title/shortLabel,
+// per-node deliverables, and the ENTIRE phases list (added/removed/renamed
+// phases + their items) plus the currently-selected phase — is carried over
+// from localStorage / Firestore.
 function migrateState(partial: Partial<AppState> | null | undefined): AppState {
   const base = defaultState();
   if (!partial) return base;
@@ -46,18 +47,27 @@ function migrateState(partial: Partial<AppState> | null | undefined): AppState {
     };
   });
 
+  // user-editable: the whole phases list (add/remove/rename + items) persists;
+  // fall back to the seed only when nothing has been persisted yet
+  const phases =
+    Array.isArray(partial.phases) && partial.phases.length
+      ? partial.phases
+      : base.phases;
+
+  // Clamp the selection to a phase that still exists — another client may have
+  // removed the previously-selected phase since this state was written.
+  const selectedId = partial.currentPhaseId ?? base.currentPhaseId;
+  const currentPhaseId = phases.some(p => p.id === selectedId)
+    ? selectedId
+    : phases[0]?.id ?? base.currentPhaseId;
+
   return {
     appTitle: partial.appTitle ?? base.appTitle,
     brandName: partial.brandName ?? base.brandName,
     campaignName: partial.campaignName ?? base.campaignName,
     nodes,
-    // user-editable: phase titles & items persist; fall back to the seed only
-    // when nothing has been persisted yet
-    phases:
-      Array.isArray(partial.phases) && partial.phases.length
-        ? partial.phases
-        : base.phases,
-    currentPhaseId: partial.currentPhaseId ?? base.currentPhaseId,
+    phases,
+    currentPhaseId,
   };
 }
 
@@ -258,6 +268,46 @@ export function useStore() {
     });
   }, [persistState]);
 
+  // Append a new phase to the end of the timeline. Number is sequential.
+  const addPhase = useCallback(() => {
+    setState(s => {
+      const newPhase = {
+        id: `phase-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        number: s.phases.length + 1,
+        title: 'Ny fase',
+        items: [] as string[],
+      };
+      const next = { ...s, phases: [...s.phases, newPhase] };
+      persistState(next);
+      return next;
+    });
+  }, [persistState]);
+
+  // Remove a phase, then resequence the remaining phase numbers (1..N). Always
+  // keep at least one phase. If the removed phase was selected, move selection
+  // to the nearest remaining phase.
+  const deletePhase = useCallback((phaseId: string) => {
+    setState(s => {
+      if (s.phases.length <= 1) return s;
+      const removedIdx = s.phases.findIndex(p => p.id === phaseId);
+      if (removedIdx === -1) return s;
+
+      const phases = s.phases
+        .filter(p => p.id !== phaseId)
+        .map((p, i) => ({ ...p, number: i + 1 }));
+
+      let currentPhaseId = s.currentPhaseId;
+      if (currentPhaseId === phaseId) {
+        const neighbor = phases[Math.min(removedIdx, phases.length - 1)];
+        currentPhaseId = neighbor ? neighbor.id : phases[0].id;
+      }
+
+      const next = { ...s, phases, currentPhaseId };
+      persistState(next);
+      return next;
+    });
+  }, [persistState]);
+
   const updateDeliverable = useCallback(
     (nodeId: string, deliverableId: string, updates: Partial<Deliverable>) => {
       setState(s => {
@@ -397,6 +447,8 @@ export function useStore() {
     setNodeLabel,
     setCurrentPhase,
     setPhaseTitle,
+    addPhase,
+    deletePhase,
     addPhaseItem,
     updatePhaseItem,
     deletePhaseItem,

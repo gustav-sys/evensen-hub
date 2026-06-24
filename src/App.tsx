@@ -23,6 +23,8 @@ function App() {
     setNodeLabel,
     setCurrentPhase,
     setPhaseTitle,
+    addPhase,
+    deletePhase,
     addPhaseItem,
     updatePhaseItem,
     deletePhaseItem,
@@ -345,6 +347,8 @@ function App() {
           onUpdatePhaseItem={updatePhaseItem}
           onDeletePhaseItem={deletePhaseItem}
           onAddPhaseItem={addPhaseItem}
+          onAddPhase={addPhase}
+          onDeletePhase={deletePhase}
         />
       </div>
 
