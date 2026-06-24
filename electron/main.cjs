@@ -25,7 +25,7 @@ function createWindow() {
     },
     titleBarStyle: 'hiddenInset',
     backgroundColor: '#F7F4EF',
-    title: 'Evensen Campaign Hub',
+    title: 'Evensen Hub',
     show: false,
   });
 

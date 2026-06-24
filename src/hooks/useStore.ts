@@ -11,7 +11,7 @@ const FIRESTORE_FALLBACK_MS = 1500;
 
 function defaultState(): AppState {
   return {
-    appTitle: 'Evensen 1916 — Campaign Hub',
+    appTitle: 'Evensen Hub',
     brandName: 'EVENSEN 1916',
     campaignName: 'Campaign SS27',
     nodes: initialNodes,

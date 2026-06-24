@@ -99,7 +99,7 @@ function App() {
             textTransform: 'uppercase',
           }}
         >
-          EVENSEN 1916
+          EVENSEN HUB
         </span>
         <span
           style={{

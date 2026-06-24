@@ -17,7 +17,7 @@
   },
   "build": {
     "appId": "com.evensen.hub",
-    "productName": "Evensen Campaign Hub",
+    "productName": "Evensen Hub",
     "directories": {
       "output": "release"
     },
@@ -36,7 +36,7 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "shortcutName": "Evensen Campaign Hub"
+      "shortcutName": "Evensen Hub"
     },
     "publish": [
       { "provider": "github", "owner": "gustav-sys", "repo": "evensen-hub" }
