@@ -476,8 +476,12 @@ export const Timeline: React.FC<Props> = ({
                   </div>
                 )}
 
-                {/* Phase chip */}
-                <button
+                {/* Phase chip — a div (not a <button>) so the rename <input>
+                    can nest inside it. An input inside a button is invalid HTML
+                    and the browser won't let you edit it. */}
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => handleClick(phase.id)}
                   title={`Fase ${phase.number} — ${phase.title}`}
                   style={{
@@ -530,7 +534,7 @@ export const Timeline: React.FC<Props> = ({
                     isCurrent={isCurrent}
                     onCommit={value => onPhaseTitleChange(phase.id, value)}
                   />
-                </button>
+                </div>
               </div>
 
               {/* Connector arrow */}

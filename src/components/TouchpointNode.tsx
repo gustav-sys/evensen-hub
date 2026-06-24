@@ -152,7 +152,10 @@ export const TouchpointNode: React.FC<Props> = ({
         />
       )}
 
-      <Icon size={node.icon === 'Shoe' ? 30 : 18} strokeWidth={1.5} />
+      {/* White icon outline — lucide icons + the shoe both use currentColor */}
+      <span style={{ color: '#FFFFFF', display: 'flex' }}>
+        <Icon size={node.icon === 'Shoe' ? 30 : 18} strokeWidth={1.5} />
+      </span>
       {editing ? (
         <input
           ref={inputRef}
