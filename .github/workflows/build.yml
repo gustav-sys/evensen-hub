@@ -19,6 +19,12 @@ jobs:
   build:
     strategy:
       fail-fast: false
+      # Run Windows then macOS ONE AT A TIME. Running both in parallel makes the
+      # two electron-builder publish steps race and create duplicate GitHub
+      # Releases (a published one + a draft, with assets split). Serializing
+      # means the macOS job finds the release the Windows job already created
+      # and uploads its assets to that same one => a single clean release.
+      max-parallel: 1
       matrix:
         os: [windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
