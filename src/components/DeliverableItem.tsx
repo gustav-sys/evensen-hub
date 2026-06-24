@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, ChevronDown, ChevronUp, Send, Trash2, Calendar, X } from 'lucide-react';
 import type { Deliverable, Status } from '../types';
-import { TEAM_MEMBERS } from '../data/team';
+import type { Profile } from '../hooks/useProfiles';
+import { initialsFor, colorFor } from '../utils/avatar';
 import { urgencyFor, dueLabel, URGENCY_COLORS } from '../utils/dueDate';
 
 const STATUS_CONFIG: Record<Status, { label: string; bg: string; color: string }> = {
@@ -13,6 +14,7 @@ const STATUS_CONFIG: Record<Status, { label: string; bg: string; color: string }
 
 interface Props {
   deliverable: Deliverable;
+  profiles: Profile[];
   nodeColor: string;
   onCycleStatus: () => void;
   onUpdateTitle: (title: string) => void;
@@ -24,6 +26,7 @@ interface Props {
 
 export const DeliverableItem: React.FC<Props> = ({
   deliverable,
+  profiles,
   nodeColor,
   onCycleStatus,
   onUpdateTitle,
@@ -43,7 +46,10 @@ export const DeliverableItem: React.FC<Props> = ({
 
   const status = STATUS_CONFIG[deliverable.status];
 
-  const assignedMember = TEAM_MEMBERS.find(m => m.name === deliverable.assignee);
+  // The stored assignee is a plain profile name. Render whenever one is set —
+  // even if the name is no longer in the profiles list (a stale assignment),
+  // so it still displays gracefully via the avatar helper.
+  const assigneeName = deliverable.assignee?.trim() || '';
 
   const urgency = urgencyFor(deliverable.dueDate, deliverable.status);
   const dueColor = URGENCY_COLORS[urgency];
@@ -154,7 +160,7 @@ export const DeliverableItem: React.FC<Props> = ({
                 fontFamily: 'inherit',
               }}
             >
-              {assignedMember ? (
+              {assigneeName ? (
                 <>
                   {/* Filled initials circle */}
                   <div
@@ -162,20 +168,20 @@ export const DeliverableItem: React.FC<Props> = ({
                       width: 20,
                       height: 20,
                       borderRadius: '50%',
-                      background: assignedMember.color,
+                      background: colorFor(assigneeName),
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: 8,
                       fontWeight: 700,
-                      color: '#0F0E0D',
+                      color: '#FFFFFF',
                       flexShrink: 0,
                       letterSpacing: '0.02em',
                     }}
                   >
-                    {assignedMember.initials}
+                    {initialsFor(assigneeName)}
                   </div>
-                  <span style={{ fontSize: 11, color: '#9A9087' }}>{assignedMember.name}</span>
+                  <span style={{ fontSize: 11, color: '#9A9087' }}>{assigneeName}</span>
                 </>
               ) : (
                 <>
@@ -218,11 +224,23 @@ export const DeliverableItem: React.FC<Props> = ({
                   boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
                 }}
               >
-                {TEAM_MEMBERS.map(member => (
+                {profiles.length === 0 && (
+                  <div
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: 11,
+                      color: '#9A9087',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    No teammates yet.
+                  </div>
+                )}
+                {profiles.map(profile => (
                   <button
-                    key={member.name}
+                    key={profile.name}
                     onClick={() => {
-                      onUpdateAssignee(member.name);
+                      onUpdateAssignee(profile.name);
                       setShowAssigneeDropdown(false);
                     }}
                     style={{
@@ -249,20 +267,20 @@ export const DeliverableItem: React.FC<Props> = ({
                         width: 20,
                         height: 20,
                         borderRadius: '50%',
-                        background: member.color,
+                        background: colorFor(profile.name),
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: 8,
                         fontWeight: 700,
-                        color: '#0F0E0D',
+                        color: '#FFFFFF',
                         flexShrink: 0,
                         letterSpacing: '0.02em',
                       }}
                     >
-                      {member.initials}
+                      {initialsFor(profile.name)}
                     </div>
-                    <span style={{ fontSize: 12, color: '#1F1D1A' }}>{member.name}</span>
+                    <span style={{ fontSize: 12, color: '#1F1D1A' }}>{profile.name}</span>
                   </button>
                 ))}
 

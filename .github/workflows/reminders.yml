@@ -1,0 +1,32 @@
+name: Daily Deliverable Reminders
+
+on:
+  schedule:
+    # Daily at ~07:00 UTC
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Log instead of sending real emails'
+        type: boolean
+        required: false
+        default: true
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Send reminders
+        run: node scripts/send-reminders.mjs
+        env:
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          SENDGRID_FROM: ${{ vars.SENDGRID_FROM }}
+          # workflow_dispatch: honor the dry_run input (default true => safe).
+          # schedule: inputs.dry_run is empty => real send.
+          DRY_RUN: ${{ github.event.inputs.dry_run }}

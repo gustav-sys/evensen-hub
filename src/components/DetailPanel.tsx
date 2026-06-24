@@ -4,6 +4,7 @@ import {
   BookOpen, Package, Box, Store, Monitor, Share2, Mail, Newspaper, Star,
 } from 'lucide-react';
 import type { NodeData } from '../types';
+import type { Profile } from '../hooks/useProfiles';
 import { DeliverableItem } from './DeliverableItem';
 import { PRIORITY_CONFIG } from '../data/priorities';
 import { ShoeIcon } from './ShoeIcon';
@@ -14,6 +15,7 @@ const iconMap: Record<string, React.FC<{ size?: number; strokeWidth?: number }>>
 
 interface Props {
   node: NodeData | undefined;
+  profiles: Profile[];
   onClose: () => void;
   onCycleStatus: (nodeId: string, deliverableId: string) => void;
   onUpdateTitle: (nodeId: string, deliverableId: string, title: string) => void;
@@ -26,6 +28,7 @@ interface Props {
 
 export const DetailPanel: React.FC<Props> = ({
   node,
+  profiles,
   onClose,
   onCycleStatus,
   onUpdateTitle,
@@ -205,6 +208,7 @@ export const DetailPanel: React.FC<Props> = ({
           <DeliverableItem
             key={d.id}
             deliverable={d}
+            profiles={profiles}
             nodeColor={node.color}
             onCycleStatus={() => onCycleStatus(node.id, d.id)}
             onUpdateTitle={title => onUpdateTitle(node.id, d.id, title)}

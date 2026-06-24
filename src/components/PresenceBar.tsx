@@ -1,29 +1,12 @@
 import React from 'react';
 import type { PresenceUser } from '../hooks/usePresence';
+import { initialsFor, colorFor } from '../utils/avatar';
 
 interface Props {
   users: PresenceUser[];
 }
 
 const MAX_AVATARS = 5;
-
-// Deterministic HSL color from a name, so each person keeps a stable hue.
-function colorForName(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = (hash << 5) - hash + name.charCodeAt(i);
-    hash |= 0;
-  }
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 55%, 45%)`;
-}
-
-function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
-}
 
 const AVATAR = 22;
 
@@ -69,7 +52,7 @@ export const PresenceBar: React.FC<Props> = ({ users }) => {
               width: AVATAR,
               height: AVATAR,
               borderRadius: '50%',
-              background: colorForName(u.name),
+              background: colorFor(u.name),
               color: '#FFFFFF',
               fontSize: 9,
               fontWeight: 700,
@@ -87,7 +70,7 @@ export const PresenceBar: React.FC<Props> = ({ users }) => {
               zIndex: shown.length - i,
             }}
           >
-            {initialsOf(u.name)}
+            {initialsFor(u.name)}
           </div>
         ))}
 

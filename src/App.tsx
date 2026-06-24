@@ -7,8 +7,11 @@ import { PriorityLegend } from './components/PriorityLegend';
 import { PresenceBar } from './components/PresenceBar';
 import { useStore } from './hooks/useStore';
 import { usePresence } from './hooks/usePresence';
+import { useProfiles } from './hooks/useProfiles';
 
 const USERNAME_KEY = 'evensen-hub-username';
+const EMAIL_KEY = 'evensen-hub-email';
+const USER_CAP = 20;
 
 function App() {
   const {
@@ -35,6 +38,11 @@ function App() {
   const [username, setUsername] = useState<string | null>(() => {
     return localStorage.getItem(USERNAME_KEY);
   });
+  const [email, setEmail] = useState<string | null>(() => {
+    return localStorage.getItem(EMAIL_KEY);
+  });
+
+  const { profiles, addProfile, loaded: profilesLoaded } = useProfiles();
 
   // Inline click-to-edit state for the top-left app title
   const [titleEditing, setTitleEditing] = useState(false);
@@ -66,6 +74,19 @@ function App() {
       localStorage.setItem(USERNAME_KEY, username);
     }
   }, [username]);
+
+  useEffect(() => {
+    if (email) {
+      localStorage.setItem(EMAIL_KEY, email);
+    }
+  }, [email]);
+
+  // Called when the user completes the name + email prompt.
+  const handleJoin = (name: string, workEmail: string) => {
+    addProfile(name, workEmail);
+    setUsername(name);
+    setEmail(workEmail);
+  };
 
   const handleNodeClick = (id: string) => {
     setActiveNodeId(prev => (prev === id ? null : id));
@@ -124,9 +145,16 @@ function App() {
         overflow: 'hidden',
       }}
     >
-      {/* Name prompt overlay — shown on first launch */}
-      {!username && (
-        <NamePrompt onSubmit={name => setUsername(name)} />
+      {/* Name + email prompt — shown until both a name and an email exist.
+          Existing name-only users get asked once for their email. */}
+      {(!username || !email) && (
+        <NamePrompt
+          onSubmit={handleJoin}
+          existingNames={profiles.map(p => p.name)}
+          cap={USER_CAP}
+          initialName={username ?? undefined}
+          ready={profilesLoaded}
+        />
       )}
 
       {/* Top bar */}
@@ -324,6 +352,7 @@ function App() {
       {activeNodeId && activeNode && (
         <DetailPanel
           node={activeNode}
+          profiles={profiles}
           onClose={handlePanelClose}
           onCycleStatus={cycleStatus}
           onUpdateTitle={(nodeId, deliverableId, title) =>
