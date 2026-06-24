@@ -1,7 +1,7 @@
 {
   "name": "evensen-hub",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "module",
   "packageManager": "pnpm@11.0.7",
   "main": "electron/main.cjs",
@@ -39,7 +39,12 @@
       "shortcutName": "Evensen Hub"
     },
     "publish": [
-      { "provider": "github", "owner": "gustav-sys", "repo": "evensen-hub" }
+      {
+        "provider": "github",
+        "owner": "gustav-sys",
+        "repo": "evensen-hub",
+        "releaseType": "release"
+      }
     ]
   },
   "dependencies": {

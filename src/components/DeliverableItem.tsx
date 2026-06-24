@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, ChevronDown, ChevronUp, Send, Trash2, Calendar, X } from 'lucide-react';
+import { MessageCircle, ChevronDown, ChevronUp, Send, Trash2, Calendar, X, Check } from 'lucide-react';
 import type { Deliverable, Status } from '../types';
 import type { Profile } from '../hooks/useProfiles';
 import { initialsFor, colorFor } from '../utils/avatar';
+import { assigneesOf, nameKey } from '../utils/assignees';
 import { urgencyFor, dueLabel, URGENCY_COLORS } from '../utils/dueDate';
 
 const STATUS_CONFIG: Record<Status, { label: string; bg: string; color: string }> = {
@@ -18,7 +19,7 @@ interface Props {
   nodeColor: string;
   onCycleStatus: () => void;
   onUpdateTitle: (title: string) => void;
-  onUpdateAssignee: (assignee: string) => void;
+  onUpdateAssignees: (assignees: string[]) => void;
   onUpdateDueDate: (dueDate: string) => void;
   onDelete: () => void;
   onAddComment: (text: string) => void;
@@ -30,7 +31,7 @@ export const DeliverableItem: React.FC<Props> = ({
   nodeColor,
   onCycleStatus,
   onUpdateTitle,
-  onUpdateAssignee,
+  onUpdateAssignees,
   onUpdateDueDate,
   onDelete,
   onAddComment,
@@ -46,10 +47,21 @@ export const DeliverableItem: React.FC<Props> = ({
 
   const status = STATUS_CONFIG[deliverable.status];
 
-  // The stored assignee is a plain profile name. Render whenever one is set —
-  // even if the name is no longer in the profiles list (a stale assignment),
-  // so it still displays gracefully via the avatar helper.
-  const assigneeName = deliverable.assignee?.trim() || '';
+  // The current set of assignee profile names (resolves legacy single-assignee
+  // data via assigneesOf). Names are rendered even when no longer in the
+  // profiles list (a stale assignment), so they still display gracefully.
+  const assigneeNames = assigneesOf(deliverable);
+
+  // Toggle a profile in/out of the assignee list, comparing by normalized
+  // identity (so a legacy "sofia" and a roster "Sofia" are the same person).
+  // Preserves existing order and appends newly-added names at the end.
+  const toggleAssignee = (name: string) => {
+    const exists = assigneeNames.some(n => nameKey(n) === nameKey(name));
+    const next = exists
+      ? assigneeNames.filter(n => nameKey(n) !== nameKey(name))
+      : [...assigneeNames, name];
+    onUpdateAssignees(next);
+  };
 
   const urgency = urgencyFor(deliverable.dueDate, deliverable.status);
   const dueColor = URGENCY_COLORS[urgency];
@@ -145,7 +157,7 @@ export const DeliverableItem: React.FC<Props> = ({
             </div>
           )}
 
-          {/* Assignee selector */}
+          {/* Assignee selector (multi-select) */}
           <div ref={assigneeRef} style={{ position: 'relative', marginTop: 5 }}>
             <button
               onClick={() => setShowAssigneeDropdown(v => !v)}
@@ -160,28 +172,41 @@ export const DeliverableItem: React.FC<Props> = ({
                 fontFamily: 'inherit',
               }}
             >
-              {assigneeName ? (
+              {assigneeNames.length > 0 ? (
                 <>
-                  {/* Filled initials circle */}
-                  <div
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: '50%',
-                      background: colorFor(assigneeName),
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 8,
-                      fontWeight: 700,
-                      color: '#FFFFFF',
-                      flexShrink: 0,
-                      letterSpacing: '0.02em',
-                    }}
-                  >
-                    {initialsFor(assigneeName)}
+                  {/* Overlapping initials circles for every current assignee */}
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {assigneeNames.map((name, i) => (
+                      <div
+                        key={name}
+                        title={name}
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          background: colorFor(name),
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 8,
+                          fontWeight: 700,
+                          color: '#FFFFFF',
+                          flexShrink: 0,
+                          letterSpacing: '0.02em',
+                          border: '1.5px solid #FAF8F4',
+                          marginLeft: i === 0 ? 0 : -7,
+                          zIndex: assigneeNames.length - i,
+                        }}
+                      >
+                        {initialsFor(name)}
+                      </div>
+                    ))}
                   </div>
-                  <span style={{ fontSize: 11, color: '#9A9087' }}>{assigneeName}</span>
+                  <span style={{ fontSize: 11, color: '#9A9087' }}>
+                    {assigneeNames.length === 1
+                      ? assigneeNames[0]
+                      : `${assigneeNames.length} assignees`}
+                  </span>
                 </>
               ) : (
                 <>
@@ -207,7 +232,7 @@ export const DeliverableItem: React.FC<Props> = ({
               )}
             </button>
 
-            {/* Dropdown */}
+            {/* Dropdown — clicking a profile toggles it and keeps the menu open */}
             {showAssigneeDropdown && (
               <div
                 style={{
@@ -220,7 +245,7 @@ export const DeliverableItem: React.FC<Props> = ({
                   borderRadius: 6,
                   padding: '4px 0',
                   zIndex: 100,
-                  minWidth: 160,
+                  minWidth: 180,
                   boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
                 }}
               >
@@ -236,61 +261,117 @@ export const DeliverableItem: React.FC<Props> = ({
                     No teammates yet.
                   </div>
                 )}
-                {profiles.map(profile => (
-                  <button
-                    key={profile.name}
-                    onClick={() => {
-                      onUpdateAssignee(profile.name);
-                      setShowAssigneeDropdown(false);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      width: '100%',
-                      background: 'none',
-                      border: 'none',
-                      padding: '6px 12px',
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      textAlign: 'left',
-                    }}
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.04)';
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLElement).style.background = 'none';
-                    }}
-                  >
-                    <div
+                {profiles.map(profile => {
+                  const selected = assigneeNames.some(
+                    n => nameKey(n) === nameKey(profile.name)
+                  );
+                  return (
+                    <button
+                      key={profile.name}
+                      onClick={() => toggleAssignee(profile.name)}
                       style={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: '50%',
-                        background: colorFor(profile.name),
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 8,
-                        fontWeight: 700,
-                        color: '#FFFFFF',
-                        flexShrink: 0,
-                        letterSpacing: '0.02em',
+                        gap: 8,
+                        width: '100%',
+                        background: selected ? 'rgba(139,110,82,0.08)' : 'none',
+                        border: 'none',
+                        padding: '6px 12px',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.04)';
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLElement).style.background = selected
+                          ? 'rgba(139,110,82,0.08)'
+                          : 'none';
                       }}
                     >
-                      {initialsFor(profile.name)}
-                    </div>
-                    <span style={{ fontSize: 12, color: '#1F1D1A' }}>{profile.name}</span>
-                  </button>
-                ))}
+                      <div
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          background: colorFor(profile.name),
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 8,
+                          fontWeight: 700,
+                          color: '#FFFFFF',
+                          flexShrink: 0,
+                          letterSpacing: '0.02em',
+                        }}
+                      >
+                        {initialsFor(profile.name)}
+                      </div>
+                      <span style={{ fontSize: 12, color: '#1F1D1A', flex: 1 }}>
+                        {profile.name}
+                      </span>
+                      {selected && <Check size={13} color="#8B6E52" strokeWidth={2.5} />}
+                    </button>
+                  );
+                })}
 
-                {/* Unassign option */}
-                {deliverable.assignee && (
+                {/* Assigned names no longer in the profiles roster — still toggleable */}
+                {assigneeNames
+                  .filter(name => !profiles.some(p => nameKey(p.name) === nameKey(name)))
+                  .map(name => (
+                    <button
+                      key={`stale-${name}`}
+                      onClick={() => toggleAssignee(name)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        width: '100%',
+                        background: 'rgba(139,110,82,0.08)',
+                        border: 'none',
+                        padding: '6px 12px',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        textAlign: 'left',
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(0,0,0,0.04)';
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(139,110,82,0.08)';
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          background: colorFor(name),
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 8,
+                          fontWeight: 700,
+                          color: '#FFFFFF',
+                          flexShrink: 0,
+                          letterSpacing: '0.02em',
+                        }}
+                      >
+                        {initialsFor(name)}
+                      </div>
+                      <span style={{ fontSize: 12, color: '#1F1D1A', flex: 1 }}>
+                        {name}
+                        <span style={{ color: '#9A9087', marginLeft: 4 }}>(not in team)</span>
+                      </span>
+                      <Check size={13} color="#8B6E52" strokeWidth={2.5} />
+                    </button>
+                  ))}
+
+                {/* Clear all */}
+                {assigneeNames.length > 0 && (
                   <button
-                    onClick={() => {
-                      onUpdateAssignee('');
-                      setShowAssigneeDropdown(false);
-                    }}
+                    onClick={() => onUpdateAssignees([])}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -328,7 +409,7 @@ export const DeliverableItem: React.FC<Props> = ({
                     >
                       ×
                     </div>
-                    <span style={{ fontSize: 12, color: '#9A9087' }}>Unassign</span>
+                    <span style={{ fontSize: 12, color: '#9A9087' }}>Clear all</span>
                   </button>
                 )}
               </div>

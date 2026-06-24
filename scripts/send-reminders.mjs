@@ -37,6 +37,21 @@ const isTruthy = (v) => v === 'true' || v === '1';
 /** name trimmed + lowercased — must match the app's useProfiles nameKeyFor. */
 const nameKey = (name) => String(name ?? '').trim().toLowerCase();
 
+/**
+ * Resolve a deliverable's assignee names. Mirrors src/utils/assignees.ts:
+ * prefer the `assignees` array; otherwise fall back to the legacy single
+ * `assignee` string; blank entries are dropped.
+ */
+const assigneesOf = (d) => {
+  const list = Array.isArray(d?.assignees) ? d.assignees : [];
+  const cleaned = list
+    .map((n) => (typeof n === 'string' ? n.trim() : ''))
+    .filter((n) => n !== '');
+  if (cleaned.length > 0) return cleaned;
+  const legacy = typeof d?.assignee === 'string' ? d.assignee.trim() : '';
+  return legacy ? [legacy] : [];
+};
+
 // ---------------------------------------------------------------------------
 // Firestore REST value decoding
 // ---------------------------------------------------------------------------
@@ -125,20 +140,31 @@ function selectReminders(state, emails, reminderDays, now = new Date()) {
       checked++;
       if (!d || !d.dueDate) continue;
       if (d.status === 'done') continue;
-      const assignee = typeof d.assignee === 'string' ? d.assignee.trim() : '';
-      if (!assignee) continue;
+      const assignees = assigneesOf(d);
+      if (assignees.length === 0) continue;
       const diff = daysUntilDue(d.dueDate, now);
       if (diff !== reminderDays) continue;
 
       due++;
       const title =
         typeof d.title === 'string' && d.title.trim() ? d.title.trim() : '(untitled deliverable)';
-      const email = (emails[nameKey(assignee)] ?? '').trim();
-      if (!email) {
-        missingEmail.push({ node: nodeTitle, title, assignee, dueDate: d.dueDate });
-        continue;
+
+      // Email each assignee individually, deduped by normalized identity so the
+      // same person listed twice (e.g. legacy "sofia" + roster "Sofia") gets a
+      // single email. A person with no email on file is skipped with a
+      // per-person warning, just like the single-assignee case.
+      const seen = new Set();
+      for (const assignee of assignees) {
+        const key = nameKey(assignee);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const email = (emails[key] ?? '').trim();
+        if (!email) {
+          missingEmail.push({ node: nodeTitle, title, assignee, dueDate: d.dueDate });
+          continue;
+        }
+        reminders.push({ node: nodeTitle, title, assignee, dueDate: d.dueDate, email });
       }
-      reminders.push({ node: nodeTitle, title, assignee, dueDate: d.dueDate, email });
     }
   }
   return { reminders, checked, due, missingEmail };
@@ -245,11 +271,15 @@ function buildSelfTestState(now) {
       {
         title: 'Launch Section',
         deliverables: [
-          { title: 'Press kit', status: 'in-progress', assignee: 'Sofia', dueDate: iso(7) }, // SELECTED
+          { title: 'Press kit', status: 'in-progress', assignee: 'Sofia', dueDate: iso(7) }, // SELECTED (legacy single)
           { title: 'Logo final', status: 'done', assignee: 'Mikkel', dueDate: iso(7) }, // skip: done
           { title: 'Venue booking', status: 'not-started', assignee: 'Ingrid', dueDate: iso(3) }, // skip: window
           { title: 'Budget sheet', status: 'blocked', assignee: 'Lars', dueDate: iso(7) }, // skip: no email
           { title: 'Misc task', status: 'not-started', assignee: '', dueDate: iso(7) }, // skip: unassigned
+          // Multi-assignee: both Sofia and Ingrid have emails => BOTH queued.
+          { title: 'Campaign film', status: 'in-progress', assignees: ['Sofia', 'Ingrid'], dueDate: iso(7) },
+          // Same person twice (legacy + roster casing) => deduped to ONE email.
+          { title: 'Lookbook', status: 'in-progress', assignees: ['Sofia', 'sofia'], dueDate: iso(7) },
         ],
       },
     ],
@@ -344,6 +374,52 @@ async function main() {
       (failed ? `, ${failed} failed to send` : '') +
       '.',
   );
+
+  if (selfTest) {
+    assertSelfTest(reminders, missingEmail);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Self-test assertions — verify the multi-assignee fan-out against the mock.
+// ---------------------------------------------------------------------------
+
+function assertSelfTest(reminders, missingEmail) {
+  const failures = [];
+  const recipientsFor = (title) =>
+    reminders.filter((r) => r.title === title).map((r) => r.email).sort();
+
+  // Legacy single assignee still selected.
+  const pressKit = recipientsFor('Press kit');
+  if (JSON.stringify(pressKit) !== JSON.stringify(['sofia@example.com'])) {
+    failures.push(`Press kit (legacy single) expected [sofia@example.com], got ${JSON.stringify(pressKit)}`);
+  }
+
+  // Multi-assignee: BOTH Sofia and Ingrid queued.
+  const film = recipientsFor('Campaign film');
+  const expectedFilm = ['ingrid@example.com', 'sofia@example.com'];
+  if (JSON.stringify(film) !== JSON.stringify(expectedFilm)) {
+    failures.push(`Campaign film (multi) expected ${JSON.stringify(expectedFilm)}, got ${JSON.stringify(film)}`);
+  }
+
+  // Duplicate identity (case variants) deduped to a single recipient.
+  const lookbook = recipientsFor('Lookbook');
+  if (JSON.stringify(lookbook) !== JSON.stringify(['sofia@example.com'])) {
+    failures.push(`Lookbook (dup identity) expected [sofia@example.com], got ${JSON.stringify(lookbook)}`);
+  }
+
+  // Lars (no email) still skipped with a per-person warning.
+  if (!missingEmail.some((m) => m.assignee === 'Lars')) {
+    failures.push('expected Lars to be skipped for missing email');
+  }
+
+  if (failures.length) {
+    console.error('[reminders] SELF-TEST FAILED:');
+    for (const f of failures) console.error(`  - ${f}`);
+    process.exitCode = 1;
+  } else {
+    console.log('[reminders] SELF-TEST PASSED: multi-assignee fan-out queues each person individually.');
+  }
 }
 
 main().catch((err) => {

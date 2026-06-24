@@ -19,7 +19,7 @@ interface Props {
   onClose: () => void;
   onCycleStatus: (nodeId: string, deliverableId: string) => void;
   onUpdateTitle: (nodeId: string, deliverableId: string, title: string) => void;
-  onUpdateAssignee: (nodeId: string, deliverableId: string, assignee: string) => void;
+  onUpdateAssignees: (nodeId: string, deliverableId: string, assignees: string[]) => void;
   onUpdateDueDate: (nodeId: string, deliverableId: string, dueDate: string) => void;
   onAddDeliverable: (nodeId: string) => void;
   onDeleteDeliverable: (nodeId: string, deliverableId: string) => void;
@@ -32,7 +32,7 @@ export const DetailPanel: React.FC<Props> = ({
   onClose,
   onCycleStatus,
   onUpdateTitle,
-  onUpdateAssignee,
+  onUpdateAssignees,
   onUpdateDueDate,
   onAddDeliverable,
   onDeleteDeliverable,
@@ -212,7 +212,7 @@ export const DetailPanel: React.FC<Props> = ({
             nodeColor={node.color}
             onCycleStatus={() => onCycleStatus(node.id, d.id)}
             onUpdateTitle={title => onUpdateTitle(node.id, d.id, title)}
-            onUpdateAssignee={assignee => onUpdateAssignee(node.id, d.id, assignee)}
+            onUpdateAssignees={assignees => onUpdateAssignees(node.id, d.id, assignees)}
             onUpdateDueDate={dueDate => onUpdateDueDate(node.id, d.id, dueDate)}
             onDelete={() => onDeleteDeliverable(node.id, d.id)}
             onAddComment={text => onAddComment(node.id, d.id, text)}

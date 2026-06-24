@@ -358,8 +358,13 @@ function App() {
           onUpdateTitle={(nodeId, deliverableId, title) =>
             updateDeliverable(nodeId, deliverableId, { title })
           }
-          onUpdateAssignee={(nodeId, deliverableId, assignee) =>
-            updateDeliverable(nodeId, deliverableId, { assignee })
+          onUpdateAssignees={(nodeId, deliverableId, assignees) =>
+            updateDeliverable(nodeId, deliverableId, {
+              assignees,
+              // Keep the legacy single-assignee field in sync so older
+              // single-assignee clients still show someone during the rollout.
+              assignee: assignees[0] ?? '',
+            })
           }
           onUpdateDueDate={(nodeId, did, dueDate) =>
             updateDeliverable(nodeId, did, { dueDate })

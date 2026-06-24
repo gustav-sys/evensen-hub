@@ -15,7 +15,11 @@ export interface Deliverable {
   id: string;
   title: string;
   status: Status;
-  assignee: string;
+  /** Current set of assignee profile names. The source of truth going forward. */
+  assignees?: string[];
+  /** Legacy single assignee (profile name). Kept for backward compatibility with
+   *  saved data and older single-assignee clients. Read via assigneesOf(). */
+  assignee?: string;
   /** ISO 'YYYY-MM-DD'. Empty/undefined = no deadline. */
   dueDate?: string;
   comments: Comment[];

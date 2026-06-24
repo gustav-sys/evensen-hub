@@ -309,6 +309,7 @@ export function useStore() {
       id: `d-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       title: 'New deliverable',
       status: 'not-started',
+      assignees: [],
       assignee: '',
       comments: [],
     };
