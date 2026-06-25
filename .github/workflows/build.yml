@@ -87,15 +87,22 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -e
-          files=$(find artifacts -type f)
-          echo "Files to attach:"
-          echo "$files"
-          # gh release create makes a PUBLISHED (non-draft) release by default,
-          # marked --latest. One CLI call from one job => exactly one release.
-          gh release create "${{ github.ref_name }}" \
-            --repo "${{ github.repository }}" \
-            --title "${{ github.ref_name }}" \
-            --notes "Evensen Hub ${{ github.ref_name }}" \
-            --latest \
-            $files
+          set -x
+          set -o pipefail
+          TAG="${{ github.ref_name }}"
+          REPO="${{ github.repository }}"
+          mapfile -t FILES < <(find artifacts -type f | sort)
+          { echo "gh version:"; gh --version; echo "Collected ${#FILES[@]} files:"; printf '  %s\n' "${FILES[@]}"; } | tee gh-output.txt
+          # Start clean in case a partial/leftover release exists for this tag.
+          gh release delete "$TAG" --repo "$REPO" --yes --cleanup-tag=false 2>&1 | tee -a gh-output.txt || true
+          # Create the release (PUBLISHED by default), then force published + latest.
+          gh release create "$TAG" "${FILES[@]}" --repo "$REPO" --title "$TAG" --notes "Evensen Hub $TAG" 2>&1 | tee -a gh-output.txt
+          gh release edit "$TAG" --repo "$REPO" --draft=false --latest 2>&1 | tee -a gh-output.txt
+
+      - name: Upload gh log (always, for debugging)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gh-release-log
+          path: gh-output.txt
+          if-no-files-found: ignore
