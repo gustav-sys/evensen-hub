@@ -2,8 +2,13 @@ name: Build installers
 
 # Builds the Windows .exe and macOS .dmg in the cloud.
 # - push to main / manual run: builds and uploads installers as run artifacts.
-# - push a version tag (e.g. v1.1.0): also publishes installers + auto-update
-#   metadata (latest.yml) to a GitHub Release, which is what powers auto-update.
+# - push a version tag (e.g. v1.1.5): a SEPARATE single job collects every
+#   platform's artifacts and assembles ONE GitHub Release from them.
+#
+# Why a separate release job: letting each matrix job (Windows + macOS) publish
+# its own release via electron-builder races and produces duplicate/split
+# releases — even serialized. So the matrix only BUILDS (--publish never) and a
+# single job publishes once. One publisher => exactly one release.
 on:
   workflow_dispatch:
   push:
@@ -19,18 +24,9 @@ jobs:
   build:
     strategy:
       fail-fast: false
-      # Run Windows then macOS ONE AT A TIME. Running both in parallel makes the
-      # two electron-builder publish steps race and create duplicate GitHub
-      # Releases (a published one + a draft, with assets split). Serializing
-      # means the macOS job finds the release the Windows job already created
-      # and uploads its assets to that same one => a single clean release.
-      max-parallel: 1
       matrix:
         os: [windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
-    env:
-      # On a version tag, publish to a GitHub Release; otherwise just build.
-      PUBLISH: ${{ startsWith(github.ref, 'refs/tags/') && 'always' || 'never' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -51,11 +47,11 @@ jobs:
       - name: Build web bundle
         run: node node_modules/vite/bin/vite.js build
 
+      # --publish never: build the installer + auto-update metadata (latest.yml)
+      # into release/, but do NOT create a GitHub Release here.
       - name: Package Windows installer
         if: matrix.os == 'windows-latest'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node node_modules/electron-builder/out/cli/cli.js --win --publish ${{ env.PUBLISH }}
+        run: node node_modules/electron-builder/out/cli/cli.js --win --publish never
 
       - name: Package macOS installer
         if: matrix.os == 'macos-latest'
@@ -63,14 +59,39 @@ jobs:
         # Mac users right-click > Open the first time, like Windows SmartScreen).
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node node_modules/electron-builder/out/cli/cli.js --mac --publish ${{ env.PUBLISH }}
+        run: node node_modules/electron-builder/out/cli/cli.js --mac --publish never
 
-      - name: Upload installers as artifacts
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: evensen-hub-${{ matrix.os }}
+          name: dist-${{ matrix.os }}
           path: |
             release/*.exe
             release/*.dmg
+            release/*.blockmap
+            release/*.yml
           if-no-files-found: ignore
+
+  # Single publisher: runs only on a version tag, after BOTH builds finish.
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Show collected files
+        run: find artifacts -type f | sort
+
+      - name: Publish single GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          fail_on_unmatched_files: true
+          draft: false
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
