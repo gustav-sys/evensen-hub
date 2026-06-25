@@ -3,7 +3,6 @@ import { MapView } from './components/MapView';
 import { DetailPanel } from './components/DetailPanel';
 import { NamePrompt } from './components/NamePrompt';
 import { Timeline } from './components/Timeline';
-import { PriorityLegend } from './components/PriorityLegend';
 import { PresenceBar } from './components/PresenceBar';
 import { useStore } from './hooks/useStore';
 import { usePresence } from './hooks/usePresence';
@@ -333,9 +332,6 @@ function App() {
             onNodeEditStart={handlePanelClose}
           />
         </div>
-
-        {/* Priority legend — bottom-left, sits just above the timeline */}
-        <PriorityLegend />
 
         {/* Timeline — pinned to the bottom of the map area, shrinks with the panel */}
         <Timeline

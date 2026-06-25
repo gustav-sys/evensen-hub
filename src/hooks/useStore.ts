@@ -21,7 +21,7 @@ function defaultState(): AppState {
 }
 
 // Merge persisted state onto the code-defined structure. Node identity and
-// presentation (which nodes exist, their color/icon/priority) come from the
+// presentation (which nodes exist, their color/icon) come from the
 // seed in code, so edits to them take effect for everyone. Genuine user data —
 // the brand name, campaign name, the user-editable node title/shortLabel,
 // per-node deliverables, and the ENTIRE phases list (added/removed/renamed
@@ -36,7 +36,7 @@ function migrateState(partial: Partial<AppState> | null | undefined): AppState {
   const nodes: NodeData[] = initialNodes.map(seed => {
     const saved = persistedNodes.find(n => n.id === seed.id);
     return {
-      ...seed, // color, icon, priority always from code
+      ...seed, // color, icon always from code
       // user-editable: node label (title + shortLabel) persists across reloads
       title: saved?.title ?? seed.title,
       shortLabel: saved?.shortLabel ?? seed.shortLabel,

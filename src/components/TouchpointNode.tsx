@@ -3,7 +3,6 @@ import {
   BookOpen, Package, Box, Store, Monitor, Share2, Mail, Newspaper, Star,
 } from 'lucide-react';
 import type { NodeData } from '../types';
-import { PRIORITY_CONFIG } from '../data/priorities';
 import { ShoeIcon } from './ShoeIcon';
 import { nodeUrgency, URGENCY_COLORS } from '../utils/dueDate';
 
@@ -42,7 +41,6 @@ export const TouchpointNode: React.FC<Props> = ({
   const Icon = iconMap[node.icon] || Star;
   const doneCount = node.deliverables.filter(d => d.status === 'done').length;
   const total = node.deliverables.length;
-  const priority = PRIORITY_CONFIG[node.priority];
   const urgency = nodeUrgency(node.deliverables);
 
   const [editing, setEditing] = useState(false);
@@ -104,34 +102,6 @@ export const TouchpointNode: React.FC<Props> = ({
         userSelect: 'none',
       }}
     >
-      {/* Priority badge — top-right edge of the circle */}
-      {priority && (
-        <span
-          style={{
-            position: 'absolute',
-            top: -2,
-            right: -2,
-            minWidth: 18,
-            height: 18,
-            padding: '0 5px',
-            borderRadius: 9,
-            background: priority.bg,
-            color: 'rgba(255,255,255,0.96)',
-            fontSize: 9,
-            fontWeight: 700,
-            letterSpacing: '0.02em',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '1.5px solid #FFFFFF',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.20)',
-            zIndex: 6,
-          }}
-        >
-          {node.priority}
-        </span>
-      )}
-
       {/* Deadline urgency dot — bottom-center edge of the circle */}
       {urgency && (
         <span

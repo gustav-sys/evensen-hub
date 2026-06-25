@@ -6,7 +6,6 @@ import {
 import type { NodeData } from '../types';
 import type { Profile } from '../hooks/useProfiles';
 import { DeliverableItem } from './DeliverableItem';
-import { PRIORITY_CONFIG } from '../data/priorities';
 import { ShoeIcon } from './ShoeIcon';
 
 const iconMap: Record<string, React.FC<{ size?: number; strokeWidth?: number }>> = {
@@ -44,7 +43,6 @@ export const DetailPanel: React.FC<Props> = ({
   const doneCount = node.deliverables.filter(d => d.status === 'done').length;
   const total = node.deliverables.length;
   const progress = total > 0 ? (doneCount / total) * 100 : 0;
-  const priority = PRIORITY_CONFIG[node.priority];
 
   return (
     <div
@@ -107,28 +105,6 @@ export const DetailPanel: React.FC<Props> = ({
                 >
                   {node.title}
                 </h2>
-                {priority && (
-                  <span
-                    title={`${node.priority} — ${priority.label}`}
-                    style={{
-                      minWidth: 18,
-                      height: 18,
-                      padding: '0 6px',
-                      borderRadius: 9,
-                      background: priority.bg,
-                      color: 'rgba(255,255,255,0.96)',
-                      fontSize: 9,
-                      fontWeight: 700,
-                      letterSpacing: '0.02em',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {node.priority}
-                  </span>
-                )}
               </div>
               <div
                 style={{

@@ -14,7 +14,6 @@ export const initialNodes: NodeData[] = [
     id: 'brand-foundation',
     title: 'Brand Foundation',
     shortLabel: 'Brand Foundation',
-    priority: 'P1',
     color: '#C8B89A',
     icon: 'BookOpen',
     deliverables: makeDeliverables([
@@ -29,7 +28,6 @@ export const initialNodes: NodeData[] = [
     id: 'product',
     title: 'Product',
     shortLabel: 'Product',
-    priority: 'P1',
     color: '#8B6E52',
     icon: 'Shoe',
     deliverables: makeDeliverables([
@@ -43,7 +41,6 @@ export const initialNodes: NodeData[] = [
     id: 'packaging',
     title: 'Packaging',
     shortLabel: 'Packaging',
-    priority: 'P1',
     color: '#7C8A5E',
     icon: 'Box',
     deliverables: makeDeliverables([
@@ -57,7 +54,6 @@ export const initialNodes: NodeData[] = [
     id: 'retail',
     title: 'Retail',
     shortLabel: 'Retail',
-    priority: 'P1',
     color: '#B5714A',
     icon: 'Store',
     deliverables: makeDeliverables([
@@ -71,7 +67,6 @@ export const initialNodes: NodeData[] = [
     id: 'digital',
     title: 'Digital',
     shortLabel: 'Digital',
-    priority: 'P1',
     color: '#3D5A73',
     icon: 'Monitor',
     deliverables: makeDeliverables([
@@ -85,7 +80,6 @@ export const initialNodes: NodeData[] = [
     id: 'social-media',
     title: 'Social Media & Content',
     shortLabel: 'Social',
-    priority: 'P1',
     color: '#5C6B3E',
     icon: 'Share2',
     deliverables: makeDeliverables([
@@ -99,7 +93,6 @@ export const initialNodes: NodeData[] = [
     id: 'email',
     title: 'Email Marketing',
     shortLabel: 'Email',
-    priority: 'P1',
     color: '#6B3E3E',
     icon: 'Mail',
     deliverables: makeDeliverables([
@@ -113,7 +106,6 @@ export const initialNodes: NodeData[] = [
     id: 'pr',
     title: 'PR & Communications',
     shortLabel: 'PR',
-    priority: 'P2',
     color: '#7A7268',
     icon: 'Newspaper',
     deliverables: makeDeliverables([
@@ -127,7 +119,6 @@ export const initialNodes: NodeData[] = [
     id: 'events',
     title: 'Events & Experiences',
     shortLabel: 'Events',
-    priority: 'P2',
     color: '#6B7A5C',
     icon: 'Star',
     deliverables: makeDeliverables([

@@ -25,13 +25,10 @@ export interface Deliverable {
   comments: Comment[];
 }
 
-export type Priority = 'P1' | 'P2' | 'P3';
-
 export interface NodeData {
   id: string;
   title: string;
   shortLabel: string;
-  priority: Priority;
   color: string;
   icon: string;
   deliverables: Deliverable[];
