@@ -23,6 +23,7 @@ interface Props {
   onAddDeliverable: (nodeId: string) => void;
   onDeleteDeliverable: (nodeId: string, deliverableId: string) => void;
   onAddComment: (nodeId: string, deliverableId: string, text: string) => void;
+  onDeleteComment: (nodeId: string, deliverableId: string, commentId: string) => void;
 }
 
 export const DetailPanel: React.FC<Props> = ({
@@ -36,6 +37,7 @@ export const DetailPanel: React.FC<Props> = ({
   onAddDeliverable,
   onDeleteDeliverable,
   onAddComment,
+  onDeleteComment,
 }) => {
   if (!node) return null;
 
@@ -192,6 +194,7 @@ export const DetailPanel: React.FC<Props> = ({
             onUpdateDueDate={dueDate => onUpdateDueDate(node.id, d.id, dueDate)}
             onDelete={() => onDeleteDeliverable(node.id, d.id)}
             onAddComment={text => onAddComment(node.id, d.id, text)}
+            onDeleteComment={commentId => onDeleteComment(node.id, d.id, commentId)}
           />
         ))}
 

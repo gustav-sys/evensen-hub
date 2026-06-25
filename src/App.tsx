@@ -32,6 +32,7 @@ function App() {
     addDeliverable,
     deleteDeliverable,
     addComment,
+    deleteComment,
     getNode,
   } = useStore();
 
@@ -373,6 +374,9 @@ function App() {
           onDeleteDeliverable={deleteDeliverable}
           onAddComment={(nodeId, deliverableId, text) =>
             addComment(nodeId, deliverableId, text, username ?? 'Anonymous')
+          }
+          onDeleteComment={(nodeId, deliverableId, commentId) =>
+            deleteComment(nodeId, deliverableId, commentId)
           }
         />
       )}

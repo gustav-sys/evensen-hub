@@ -432,6 +432,31 @@ export function useStore() {
     [persistState]
   );
 
+  const deleteComment = useCallback(
+    (nodeId: string, deliverableId: string, commentId: string) => {
+      setState(s => {
+        const next = {
+          ...s,
+          nodes: s.nodes.map(n =>
+            n.id !== nodeId
+              ? n
+              : {
+                  ...n,
+                  deliverables: n.deliverables.map(d =>
+                    d.id !== deliverableId
+                      ? d
+                      : { ...d, comments: d.comments.filter(c => c.id !== commentId) }
+                  ),
+                }
+          ),
+        };
+        persistState(next);
+        return next;
+      });
+    },
+    [persistState]
+  );
+
   const getNode = useCallback(
     (nodeId: string): NodeData | undefined =>
       state.nodes.find(n => n.id === nodeId),
@@ -457,6 +482,7 @@ export function useStore() {
     addDeliverable,
     deleteDeliverable,
     addComment,
+    deleteComment,
     getNode,
   };
 }

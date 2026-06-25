@@ -23,6 +23,7 @@ interface Props {
   onUpdateDueDate: (dueDate: string) => void;
   onDelete: () => void;
   onAddComment: (text: string) => void;
+  onDeleteComment: (commentId: string) => void;
 }
 
 export const DeliverableItem: React.FC<Props> = ({
@@ -35,6 +36,7 @@ export const DeliverableItem: React.FC<Props> = ({
   onUpdateDueDate,
   onDelete,
   onAddComment,
+  onDeleteComment,
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
@@ -648,6 +650,7 @@ export const DeliverableItem: React.FC<Props> = ({
             {deliverable.comments.map(c => (
               <div
                 key={c.id}
+                className="comment-row"
                 style={{
                   marginBottom: 8,
                   fontSize: 11,
@@ -655,9 +658,29 @@ export const DeliverableItem: React.FC<Props> = ({
                   lineHeight: 1.5,
                 }}
               >
-                <span style={{ color: '#1F1D1A', fontWeight: 600 }}>{c.author}</span>
-                <span style={{ color: '#9A9087', margin: '0 6px' }}>·</span>
-                <span>{c.timestamp}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: '#1F1D1A', fontWeight: 600 }}>{c.author}</span>
+                  <span style={{ color: '#9A9087' }}>·</span>
+                  <span style={{ flex: 1 }}>{c.timestamp}</span>
+                  <button
+                    onClick={() => onDeleteComment(c.id)}
+                    title="Delete comment"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#9A9087',
+                      cursor: 'pointer',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      flexShrink: 0,
+                    }}
+                    onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = '#B4463C')}
+                    onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = '#9A9087')}
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
                 <div style={{ color: '#6E655C', marginTop: 2 }}>{c.text}</div>
               </div>
             ))}
